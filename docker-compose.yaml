@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  database:
+    image: mysql:8.0
+    container_name: pizza-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: pizzadb
+      MYSQL_USER: pizzauser
+      MYSQL_PASSWORD: pizzapass
+    volumes:
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - pizza-delivery
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: pizza-backend
+    restart: always
+    environment:
+      DB_HOST: database
+      DB_USER: pizzauser
+      DB_PASSWORD: pizzapass
+      DB_NAME: pizzadb
+      DB_PORT: 3306
+    depends_on:
+      - database
+    ports:
+      - "3000:3000"
+    networks:
+      - pizza-delivery
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: pizza-frontend
+    restart: always
+    ports:
+      - "8083:80"
+    depends_on:
+      - backend
+    networks:
+      - pizza-delivery
+
+networks:
+  pizza-delivery:
+    driver: bridge
